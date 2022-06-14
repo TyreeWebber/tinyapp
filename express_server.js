@@ -32,7 +32,9 @@ app.get("/urls.json", (req, res) => {
 });
 
 app.get("/urls/:shortURL", (req, res) => {
-  const templateVars = { shortURL: req.params.shortURL, longURL: 'https://www.lighthouselabs.ca/' };
+  let shortURL = req.params.shortURL;
+  let longURL = urlDatabase[shortURL];
+  const templateVars = { longURL: longURL, shortURL: shortURL };
   res.render("urls_show", templateVars);
 });
 
@@ -41,8 +43,23 @@ app.listen(PORT, () => {
 });
 
 app.post("/urls", (req, res) => {
-  console.log(req.body);  // Log the POST request body to the console
-  res.send("Ok");         // Respond with 'Ok' (we will replace this)
+  let shortURL = generateRandomString();
+  let longURL = req.body.longURL;
+  urlDatabase[shortURL] = longURL;
+  res.redirect(`/urls/${shortURL}`)
+});
+
+app.get("/u/:shortURL", (req, res) => {
+  const shortURL = req.params.shortURL;
+  const longURL = urlDatabase[shortURL];
+  res.redirect(longURL);
+  //console.log(req.params);
+});
+
+app.post("/urls/:shortURL/delete", (req, res) => {
+  let shortURL = req.params.shortURL; 
+  delete urlDatabase[shortURL]
+  res.redirect("/urls/");
 });
 
 const generateRandomString = () => {
