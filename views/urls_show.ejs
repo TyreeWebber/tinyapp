@@ -5,7 +5,7 @@
   <!-- Bootstrap CSS -->
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css"
     integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous">
-  <title>URL - TinyApp Example</title>
+  <title>URL - TinyApp</title>
 </head>
 
 <body>
@@ -21,10 +21,10 @@
             <%= shortURL %>
           </a></p>
       </div>
-      <div class="card-footer text-muted"></div>
+      <div class="card-footer text-muted">EDIT</div>
     </div>
     <form class="form-inline justify-content-center" method="POST" action="/urls/<%= shortURL %>/edit"> 
-      <label for ="longURL">newURL:</label>
+      <label for ="longURL">Update URL:</label>
       <input class="form-control" 
       type="text" 
       name="newURL" 
