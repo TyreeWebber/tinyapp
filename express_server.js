@@ -9,6 +9,16 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
+const generateRandomString = () => {
+  let randomString = "";
+  const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  const stringLength = 6;
+  for (let i = 0; i < stringLength; i++) {
+    randomString += characters[Math.floor(Math.random() * characters.length)];
+  }
+  return randomString;
+};
+
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com"
@@ -39,7 +49,10 @@ app.get("/", (req, res) => {
 });
 
 app.get("/urls/new", (req, res) => {
-  res.render("urls_new");
+  const templateVars = {
+    username: 'username'
+  };
+  res.render("urls_new", templateVars);
 });
 
 app.get("/urls", (req, res) => {
@@ -59,27 +72,9 @@ app.get("/urls.json", (req, res) => {
 });
 
 app.get("/urls/:shortURL", (req, res) => {
-  const shortURL = req.params.shortURL;
-  if (!urlDatabase[shortURL]) {
-    const templateVars = {
-      user: users[req.session.userID],
-      error: "This is not a valid link!",
-    };
-    return res.status(403).render("errors", templateVars);
-  }
-  if (req.session.userID !== urlDatabase[shortURL].userID) {
-    const templateVars = {
-      user: users[req.session.userID],
-      error: "You are not authorized to edit this!",
-    };
-    return res.status(403).render("errors", templateVars);
-  }
-  const longURL = urlDatabase[shortURL].longURL;
-  const templateVars = {
-    longURL: longURL,
-    shortURL: shortURL,
-    user: users[req.session.userID],
-  };
+  let shortURL = req.params.shortURL;
+  let longURL = urlDatabase[shortURL];
+  const templateVars = { longURL: longURL, shortURL: shortURL, username: 'username' };
   res.render("urls_show", templateVars);
 });
 
@@ -92,13 +87,8 @@ app.listen(PORT, () => {
 });
 
 app.post("/urls", (req, res) => {
-  if (!req.session.userID) {
-    return res.redirect("/login");
-  }
-  const shortURL = generateRandomString();
-  const longURL = req.body.longURL;
-  urlDatabase[shortURL] = longURL;
-  res.redirect(`/urls/${shortURL}`);
+  console.log(req.body);
+  res.send("Ok");
 });
 
 app.get("/u/:shortURL", (req, res) => {
@@ -108,10 +98,10 @@ app.get("/u/:shortURL", (req, res) => {
   //console.log(req.params);
 });
 
-app.post("/login/", (req,res) => {
+app.post("/login/", (req, res) => {
   res.cookie('username', req.body.username)
   res.redirect("/urls/");
-  });
+});
 
 app.post("/urls/:shortURL/update", (req, res) => {
   const shortURL = req.params.shortURL;
@@ -138,12 +128,7 @@ app.post("/login/", (req, res) => {
   res.redirect("/urls/");
 });
 
-const generateRandomString = () => {
-  let randomString = "";
-  const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  const stringLength = 6;
-  for (let i = 0; i < stringLength; i++) {
-    randomString += characters[Math.floor(Math.random() * characters.length)];
-  }
-  return randomString;
-};
+app.post("/logout", (req, res) => {
+  req.session = null;
+  res.redirect("/urls");
+});
