@@ -32,7 +32,6 @@ const users = {
   }
 };
 
-
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com"
@@ -55,6 +54,9 @@ app.get("/", (req, res) => {
 });
 
 app.get("/urls/new", (req, res) => {
+  if (!req.cookies["userID"]) {
+    return res.redirect("/login");
+  }
   const templateVars = {
     userID: req.cookies["userID"],
     user: users[req.cookies["userID"]],
@@ -63,10 +65,13 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
-  const user_id = req.cookies.user_id;
+  if (!req.cookies["userID"]) {
+    return res.redirect("/login");
+  }
   const templateVars = {
-    urls: urlDatabase,
-    userID: req.cookies['userID']
+    urls: urlsForUser(req.cookies["userID"]),
+    userID: req.cookies['userID'],
+    user: users[req.cookies["userID"]],
   };
   res.render("urls_index", templateVars);
 });
@@ -80,13 +85,16 @@ app.get("/urls.json", (req, res) => {
 });
 
 app.get("/urls/:shortURL", (req, res) => {
-  let shortURL = req.params.shortURL;
-  let longURL = urlDatabase[shortURL];
+  const shortURL = req.params.shortURL;
+  const longURL = urlDatabase[shortURL].longURL;
+  if (req.cookies["userID"] !== urlDatabase[shortURL].userID) {
+    return res.send("You do not have the authorization to edit this."); 
+  }
   const templateVars = {
     longURL: longURL,
     shortURL: shortURL,
     userID: req.cookies["userID"],
-    users: users[req.cookies["userID"]],
+    user: users[req.cookies["userID"]],
   };
 });
 
@@ -102,50 +110,60 @@ app.get("/register", (req, res) => {
   res.render("registration", templateVars);
 });
 
+app.get("/u/:shortURL", (req, res) => {
+  const shortURL = req.params.shortURL;
+  const longURL = urlDatabase[shortURL].longURL;
+  res.redirect(longURL);
+});
+
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
 
 app.post("/urls", (req, res) => {
+  if (!req.cookies["userID"]) {
+    return res.redirect("/login");
+  }
+  let shortURL = generateRandomString;
+  let longURL = req.body.longURL;
+  urlDatabase[shortURL] = { longURL: longURL, userID: req.cookies["userID"] };
   console.log(req.body);
-  res.send("Ok");
+  res.redirect(`/urls/${shortURL}`);
 });
 
-app.post("/login/", (req, res) => {
-  app.post("/login", (req, res) => {
-    let email = req.body.email;
-    console.log("reguest body", req.body);
-    let password = req.body.password;
-    for (const user in users) {
-      if (users[user].email !== email) {
-        return res.status(403).send("Status: 403 An account does not exist.");
-      }
+app.post("/login", (req, res) => {
+  let email = req.body.email;
+  console.log("reguest body", req.body);
+  let password = req.body.password;
+  for (const user in users) {
+    if (users[user].email === email) {
       if (users[user].password === password) {
         res.cookie("userID", users[user].id);
         return res.redirect("/urls");
+      } else {
+        return res.status(403).send("You have entered the wrong password.");
       }
-      return res.status(403).send("You have entered a wrong password.");
     }
-  });
+    return res.status(403).send("Account does not exist.");
+  }
 });
 
 app.post("/urls/:shortURL/edit", (req, res) => {
   const shortURL = req.params.shortURL;
-  urlDatabase[shortURL] = req.body.newlongURL;
+  if (req.cookies["userID"] !== urlDatabase[shortURL].userID) {
+    return res.send("You are not authorized to edit this"); 
+  }
+  urlDatabase[shortURL].longURL = req.body.newURL;
   res.redirect("/urls/");
 });
 
 app.post("/urls/:shortURL/delete", (req, res) => {
   const shortURL = req.params.shortURL;
-  if (req.session.userID === urlDatabase[shortURL].userID) {
+  if (req.cookies["userID"] === urlDatabase[shortURL].userID) {
     delete urlDatabase[shortURL];
     res.redirect("/urls/");
   } else {
-    const templateVars = {
-      user: users[req.session.userID],
-      error: "You are not authorized to delete this",
-    };
-    return res.status(400).render("errors", templateVars);
+    res.send("You are not authorized to delete this");
   }
 });
 
@@ -179,7 +197,7 @@ app.post("/register", (req, res) => {
     email: req.body.email,
     password: req.body.password
   };
-  res.cookie("user_id", ID);
-  console.log("users----", users);
+  res.cookie("userID", ID);
+  console.log("users", users);
   res.redirect("/urls");
 });
