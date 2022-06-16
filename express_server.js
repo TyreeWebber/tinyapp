@@ -130,10 +130,13 @@ app.post("/urls/:shortURL/delete", (req, res) => {
   }
 });
 
-app.post("/login/", (req, res) => {
-  res.cookie('userID', req.body.userID);
-  res.redirect("/urls/");
-});
+app.get("/login", (req, res) => {
+  const templateVars = {
+    userID: req.cookies['userID']
+  }
+    res.render("login_page", templateVars);
+  });
+  
 
 app.post("/logout/", (req, res) => {
   res.clearCookie('username', req.body.username)
