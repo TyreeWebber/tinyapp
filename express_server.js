@@ -62,6 +62,7 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
+  const user_id = req.cookies.user_id;
   const templateVars = {
     urls: urlDatabase,
     userID: req.cookies['userID']
@@ -106,7 +107,7 @@ app.post("/urls", (req, res) => {
 
 app.post("/login/", (req, res) => {
   res.cookie('userID', req.body.userID);
-  res.redirect("/urls/");
+  res.redirect("/urls");
 });
 
 app.post("/urls/:shortURL/edit", (req, res) => {
@@ -136,9 +137,26 @@ app.post("/login/", (req, res) => {
 
 app.post("/logout/", (req, res) => {
   res.clearCookie('username', req.body.username)
-  res.redirect("/urls/");
+  res.redirect("/urls");
 });
 
 app.post("/register", (req, res) => {
-
+  let email = req.body.email;
+    if (!req.body.email || !req.body.password) {
+      return res.status(400).send('The email or password field waas left empty. Please enter your details and try again.');
+    }
+    for (const user in users) {
+    if (users[user].email === email) {
+      return res.status(400).send ('You already have an account.');
+      }
+    };
+  let ID =  generateRandomString();
+  users[ID] = {
+    id: ID,
+    email: req.body.email,
+    password: req.body.password
+  };
+  res.cookie('user_id', ID);
+  console.log('users:::::::::::',users);
+    res.redirect("/urls");
 });
