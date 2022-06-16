@@ -3,6 +3,7 @@ const app = express();
 const PORT = 8080; // default port 8080
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
+const bcrypt = require('bcryptjs');
 
 app.set("view engine", "ejs");
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -132,12 +133,11 @@ app.post("/urls", (req, res) => {
 });
 
 app.post("/login", (req, res) => {
-  let email = req.body.email;
-  console.log("reguest body", req.body);
-  let password = req.body.password;
+  const email = req.body.email;
+  const password = req.body.password;
   for (const user in users) {
     if (users[user].email === email) {
-      if (users[user].password === password) {
+      if (bcrypt.compareSync(password, users[user].password)){
         res.cookie("userID", users[user].id);
         return res.redirect("/urls");
       } else {
@@ -182,7 +182,7 @@ app.post("/logout/", (req, res) => {
 });
 
 app.post("/register", (req, res) => {
-  let email = req.body.email;
+  const email = req.body.email;
   if (!req.body.email || !req.body.password) {
     return res.status(400).send('The email or password field waas left empty. Please enter your details and try again.');
   }
@@ -191,13 +191,14 @@ app.post("/register", (req, res) => {
       return res.status(400).send('You already have an account.');
     }
   };
-  let ID = generateRandomString();
+
+  const ID = generateRandomString();
+  const hashedPassword = bcrypt.hashSync(req.body.password, 10);
   users[ID] = {
     id: ID,
     email: req.body.email,
-    password: req.body.password
+    password: hashedPassword,
   };
   res.cookie("userID", ID);
-  console.log("users", users);
   res.redirect("/urls");
 });

@@ -25,27 +25,38 @@
           </tr>
         </thead>
         <tbody>
+          <% if(Object.keys(urls).length===0 && !user) { %>
+            <div class="alert alert-danger">
+              Please login to view your URLS
+            </div>
+            <% } %>
+  
+            <% if(Object.keys(urls).length===0 && user) { %>
+                <div class="alert alert-info alert-dismissible">
+                  <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
+                  <strong>You currently have no URLs to display</strong> 
+                </div>
+              </div>
+              <% } %>
+  
           <% for(let url in urls) { %>
             <tr>
               <td>
-                <a href='urls/<%=url %>'>
                   <%= url %>
-                </a>
               </td>
               <td>
                 <%= urls[url].longURL %>
               </td>
               <td>
                 <form method="GET" action="/urls/<%=url%>">
-                  <button type="submit" class="btn btn-outline-primary">Edit</button>
+                  <button type="submit" class="btn btn-info">Edit</button>
                 </form>
                 </td>
                 <td>
-                <form method="POST" action="/urls/<%=url%>/delete"><button class="btn btn-outline-danger">Delete</button></form>
+                <form method="POST" action="/urls/<%=url%>/delete"><button class="btn btn-danger">Delete</button></form>
               </td>
-              <td>
             </tr>
-            <% } %>
+          <% } %>
         </tbody>
       </table>
     </main>
