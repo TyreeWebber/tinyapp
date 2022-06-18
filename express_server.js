@@ -1,5 +1,7 @@
-const PORT = 8080; // default port
+//default port
+const PORT = 8080;
 
+//dependencies
 const express = require("express");
 const app = express();
 const bodyParser = require("body-parser");
@@ -7,6 +9,7 @@ const bcrypt = require("bcrypt");
 const cookieSession = require("cookie-session");
 const { getUserByEmail, urlsForUser, generateRandomString } = require("./helper_functions");
 
+//middleware
 app.set("view engine", "ejs");
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -17,6 +20,7 @@ app.use(
   })
 );
 
+//feed data
 const urlDatabase = {
   b6UTxQ: { longURL: "https://www.tsn.ca", userID: "userRandomID" },
   i3BoGr: { longURL: "https://www.google.ca", userID: "user2RandomID" },
@@ -35,6 +39,8 @@ const users = {
   },
 };
 
+
+//get route handlers
 app.get("/", (req, res) => {
   res.redirect("/urls");
 });
@@ -43,14 +49,17 @@ app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
 
+//temporary endpoint
 app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
 
+//temporary endpoint to view current user
 app.get("/users.json", (req, res) => {
   res.json(users);
 });
 
+//renders main page
 app.get("/urls", (req, res) => {
   const templateVars = {
     urls: urlsForUser(urlDatabase, req.session.userID),
@@ -60,6 +69,7 @@ app.get("/urls", (req, res) => {
   res.render("urls_index", templateVars);
 });
 
+//renders new url page, redirects if not signed in
 app.get("/urls/new", (req, res) => {
   if (!req.session.userID) {
     return res.redirect("/login");
@@ -71,6 +81,7 @@ app.get("/urls/new", (req, res) => {
   res.render("urls_new", templateVars);
 });
 
+//sends to shortURL page with edit and displays error code if tries to edit URL that does not belong to user
 app.get("/urls/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL;
   if (!urlDatabase[shortURL]) {
@@ -96,12 +107,14 @@ app.get("/urls/:shortURL", (req, res) => {
   res.render("urls_show", templateVars);
 });
 
+//manages shortURL link and redirects to corresponding longURL 
 app.get("/u/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL;
   const longURL = urlDatabase[shortURL].longURL;
   res.redirect(longURL);
 });
 
+//renders signup page
 app.get("/register", (req, res) => {
   const templateVars = {
     user: users[req.session.userID],
@@ -109,6 +122,7 @@ app.get("/register", (req, res) => {
   res.render("registration", templateVars);
 });
 
+//renders login page
 app.get("/login", (req, res) => {
   const templateVars = {
     userID: null,
@@ -117,6 +131,7 @@ app.get("/login", (req, res) => {
   res.render("login_page", templateVars);
 });
 
+//redirects to error page if user tries to use a link that does not exist
 app.get("*", (req, res) => {
   const templateVars = {
     user: users[req.session.userID],
@@ -125,6 +140,7 @@ app.get("*", (req, res) => {
   return res.status(404).render("error_page", templateVars);
 });
 
+//adds random generated shortURL to URLs page and redirects user to login if they are not logged in
 app.post("/urls", (req, res) => {
   if (!req.session.userID) {
     return res.redirect("/login");
@@ -135,6 +151,7 @@ app.post("/urls", (req, res) => {
   res.redirect(`/urls/${shortURL}`);
 });
 
+//deletes existing URL if user is signed in and link belongs to the user
 app.post("/urls/:shortURL/delete", (req, res) => {
   const shortURL = req.params.shortURL;
   if (req.session.userID === urlDatabase[shortURL].userID) {
@@ -149,6 +166,7 @@ app.post("/urls/:shortURL/delete", (req, res) => {
   }
 });
 
+//edits existing URL if user is signed in and link belongs to the user
 app.post("/urls/:shortURL/edit", (req, res) => {
   const shortURL = req.params.shortURL;
   if (req.session.userID !== urlDatabase[shortURL].userID) {
@@ -158,6 +176,7 @@ app.post("/urls/:shortURL/edit", (req, res) => {
   res.redirect("/urls/");
 });
 
+//checks for valid login credentials and redirects to the URL page if successful
 app.post("/login", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
@@ -187,11 +206,13 @@ app.post("/login", (req, res) => {
   return res.redirect("/urls");
 });
 
+//logs user out of account and deletes cookies
 app.post("/logout", (req, res) => {
   req.session = null;
   res.redirect("/urls");
 });
 
+//allows user to sign up for new account given account does not already exist
 app.post("/register", (req, res) => {
   const email = req.body.email;
   if (!req.body.email || !req.body.password) {
@@ -213,6 +234,7 @@ app.post("/register", (req, res) => {
 
   const ID = generateRandomString();
 
+  //converts plaintext password to a hashed pasword
   const hashedPassword = bcrypt.hashSync(req.body.password, 10);
 
   users[ID] = {
@@ -224,6 +246,7 @@ app.post("/register", (req, res) => {
   res.redirect("/urls");
 });
 
+//port listener
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
